@@ -1,0 +1,8 @@
+Ai-Powered-Chat
+Copyright 2026 Abhishek Raj
+
+This project started from "springboot-react-docker-chatbot" by Vikas Rajput
+(https://github.com/vikasrajputin/springboot-react-docker-chatbot), licensed under
+the Apache License, Version 2.0. It has since been substantially rewritten: new
+backend architecture (Spring Boot 4, Spring AI 2, conversation memory, streaming,
+validation and error handling), a new React 19 + Vite frontend, and new Docker setup.
