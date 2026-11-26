@@ -8,12 +8,14 @@ spring:
     virtual:
       enabled: true
   ai:
+    # Works with any OpenAI-compatible API: Ollama (free, local), Groq (free tier), OpenAI, ...
     openai:
-      api-key: ${OPENAI_API_KEY}
+      base-url: ${AI_BASE_URL:http://localhost:11434/v1}
+      api-key: ${AI_API_KEY:ollama}
       chat:
         options:
-          model: ${OPENAI_MODEL:gpt-4o-mini}
-          temperature: ${OPENAI_TEMPERATURE:0.7}
+          model: ${AI_MODEL:llama3.2:3b}
+          temperature: ${AI_TEMPERATURE:0.7}
 
 app:
   chat:
