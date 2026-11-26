@@ -3,6 +3,8 @@
 A full-stack AI chat assistant with real-time streaming replies, conversation memory and a modern, responsive UI.
 It is built with **Spring Boot 4 + Spring AI 2** on the backend and **React 19 + Vite** on the frontend, and it runs with one Docker Compose command.
 
+**Free by default:** Nova runs a local AI model with [Ollama](https://ollama.com), so you don't need an API key or a paid account. You can switch to Groq (free tier) or OpenAI by changing a few lines in `.env`.
+
 ## Features
 
 - **Streaming responses**: tokens appear as the model generates them (NDJSON stream).
@@ -18,7 +20,8 @@ It is built with **Spring Boot 4 + Spring AI 2** on the backend and **React 19 +
 
 | Layer    | Technology                                                       |
 | -------- | ---------------------------------------------------------------- |
-| Backend  | Java 25, Spring Boot 4.2, Spring AI 2.1 (OpenAI), Spring Actuator |
+| Backend  | Java 25, Spring Boot 4.2, Spring AI 2.1, Spring Actuator         |
+| AI       | Ollama + Llama 3.2 (local, free), or any OpenAI-compatible API   |
 | Frontend | React 19, Vite 8, react-markdown + GFM, react-icons               |
 | DevOps   | Docker (multi-stage builds), Docker Compose, Nginx, GitHub Actions |
 
@@ -27,7 +30,8 @@ It is built with **Spring Boot 4 + Spring AI 2** on the backend and **React 19 +
 ```
 Browser ──► Nginx (frontend container, :3000)
               ├── /        → React static build
-              └── /api/*   → Spring Boot (backend container, :8080) ──► OpenAI API
+              └── /api/*   → Spring Boot (backend container, :8080) ──► Ollama (local model)
+                                                                        or Groq / OpenAI
 ```
 
 ## Quick start (Docker)
@@ -35,19 +39,37 @@ Browser ──► Nginx (frontend container, :3000)
 ```bash
 git clone https://github.com/Abhishek360007/Ai-Powered-Chat.git
 cd Ai-Powered-Chat
-cp .env.example .env          # then put your OpenAI API key in .env
+cp .env.example .env          # the defaults use the free local model
 docker compose up --build
 ```
 
-Open **http://localhost:3000**.
+Open **http://localhost:3000**. The first start downloads the model (about 2 GB); later starts take seconds.
+
+**Have an NVIDIA GPU?** Replies get much faster if you also load the GPU file:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+```
+
+### Choosing an AI provider
+
+Edit `.env` (see [`.env.example`](.env.example) for all options):
+
+| Provider | Cost | What to set |
+| -------- | ---- | ----------- |
+| **Ollama** (default) | Free, runs on your PC | `COMPOSE_PROFILES=ollama`, `AI_MODEL=llama3.2:3b` |
+| **Groq** | Free tier, very fast | `AI_BASE_URL=https://api.groq.com/openai/v1`, `AI_API_KEY=gsk_...`, `AI_MODEL=llama-3.3-70b-versatile` |
+| **OpenAI** | Paid | `AI_BASE_URL=https://api.openai.com/v1`, `AI_API_KEY=sk-...`, `AI_MODEL=gpt-4o-mini` |
 
 ## Running locally (without Docker)
+
+**AI model**: install [Ollama](https://ollama.com/download), then run `ollama pull llama3.2:3b`.
+By default the backend talks to Ollama at `http://localhost:11434/v1`.
 
 **Backend** (requires JDK 25):
 
 ```bash
 cd backend
-export OPENAI_API_KEY=sk-...      # PowerShell: $env:OPENAI_API_KEY="sk-..."
 ./mvnw spring-boot:run
 ```
 
@@ -66,9 +88,10 @@ If your backend runs on another port, set `API_PROXY_TARGET`, for example `API_P
 
 | Variable               | Default                                       | Description                              |
 | ---------------------- | --------------------------------------------- | ---------------------------------------- |
-| `OPENAI_API_KEY`       | (required)                                    | Your OpenAI API key                      |
-| `OPENAI_MODEL`         | `gpt-4o-mini`                                 | Chat model to use                        |
-| `OPENAI_TEMPERATURE`   | `0.7`                                         | Creativity of replies (0 to 2)           |
+| `AI_BASE_URL`          | `http://localhost:11434/v1`                   | OpenAI-compatible API endpoint           |
+| `AI_API_KEY`           | `ollama`                                      | API key (Ollama ignores it)              |
+| `AI_MODEL`             | `llama3.2:3b`                                 | Model name                               |
+| `AI_TEMPERATURE`       | `0.7`                                         | Creativity of replies (0 to 2)           |
 | `CHAT_MEMORY_WINDOW`   | `20`                                          | Messages remembered per conversation     |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Comma-separated list of allowed origins  |
 | `PORT`                 | `8080`                                        | Backend port                             |
@@ -118,7 +141,8 @@ Ai-Powered-Chat/
 │       ├── components/      Sidebar, MessageList, Message, Composer
 │       ├── api.js           Streaming client
 │       └── useConversations.js
-├── docker-compose.yml
+├── docker-compose.yml       App + Ollama
+├── docker-compose.gpu.yml   Optional NVIDIA GPU support
 └── .github/workflows/ci.yml
 ```
 
